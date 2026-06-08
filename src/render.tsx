@@ -13,10 +13,12 @@ const BLOG_ALLOWED_TAGS = sanitizeHtml.defaults.allowedTags.concat([
   "aside",
   "figure",
   "figcaption",
+  "img",
 ]);
 const BLOG_ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions["allowedAttributes"] = {
   ...sanitizeHtml.defaults.allowedAttributes,
   a: ["href", "name", "target", "rel"],
+  img: ["src", "alt", "title", "width", "height", "loading"],
   "*": ["data-component", "data-tone"],
 };
 
@@ -51,6 +53,19 @@ export async function renderPostSource({
       allowedTags: BLOG_ALLOWED_TAGS,
       allowedAttributes: BLOG_ALLOWED_ATTRIBUTES,
       allowedSchemes: ["http", "https", "mailto"],
+      transformTags: {
+        img: (_tagName, attribs) => {
+          const src = rewritePostAssetSrc(attribs.src, slug, assetBaseUrl);
+          return {
+            tagName: "img",
+            attribs: {
+              ...attribs,
+              ...(src ? { src } : {}),
+              loading: attribs.loading || "lazy",
+            },
+          };
+        },
+      },
     },
   );
   const wordCount = parsed.content.trim().split(/\s+/).filter(Boolean).length;
@@ -70,4 +85,17 @@ export async function renderPostSource({
       wordCount,
     },
   };
+}
+
+function rewritePostAssetSrc(
+  src: string | undefined,
+  slug: string,
+  assetBaseUrl: string,
+): string | undefined {
+  if (!src || src.startsWith("/") || src.startsWith("#") || src.startsWith("?"))
+    return src;
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(src)) return src;
+  const assetPath = src.replace(/^\.\//, "");
+  if (assetPath.startsWith("..")) return src;
+  return `${assetBaseUrl.replace(/\/$/, "")}/${slug}/${assetPath}`;
 }

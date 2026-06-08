@@ -57,6 +57,20 @@ describe("blog content renderer", () => {
     expect(post.contentHtml).toContain('data-component="callout"');
   });
 
+  it("preserves Markdown images with routable asset URLs", async () => {
+    const post = await renderPostSource({
+      slug: "image-post",
+      assetBaseUrl: "https://cdn.example.com/posts",
+      source: `${validFrontmatter}
+![Damage curve](./diagram.png)
+`,
+    });
+
+    expect(post.contentHtml).toContain(
+      '<img src="https://cdn.example.com/posts/image-post/diagram.png" alt="Damage curve" loading="lazy" />',
+    );
+  });
+
   it("rejects missing hero alt text", async () => {
     await expect(
       renderPostSource({

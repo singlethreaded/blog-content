@@ -3,11 +3,22 @@ import matter from "gray-matter";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as runtime from "react/jsx-runtime";
+import sanitizeHtml from "sanitize-html";
 
 import { mdxComponents } from "./components.js";
 import { type BlogArtifactPost, FrontmatterSchema } from "./schema.js";
 
 const WORDS_PER_MINUTE = 220;
+const BLOG_ALLOWED_TAGS = sanitizeHtml.defaults.allowedTags.concat([
+  "aside",
+  "figure",
+  "figcaption",
+]);
+const BLOG_ALLOWED_ATTRIBUTES: sanitizeHtml.IOptions["allowedAttributes"] = {
+  ...sanitizeHtml.defaults.allowedAttributes,
+  a: ["href", "name", "target", "rel"],
+  "*": ["data-component", "data-tone"],
+};
 
 export async function renderPostSource({
   source,
@@ -32,8 +43,15 @@ export async function renderPostSource({
   );
   const mod = await run(compiled, { ...runtime, baseUrl: import.meta.url });
   const Content = mod.default;
-  const contentHtml = renderToStaticMarkup(
-    React.createElement(Content, { components: mdxComponents }),
+  const contentHtml = sanitizeHtml(
+    renderToStaticMarkup(
+      React.createElement(Content, { components: mdxComponents }),
+    ),
+    {
+      allowedTags: BLOG_ALLOWED_TAGS,
+      allowedAttributes: BLOG_ALLOWED_ATTRIBUTES,
+      allowedSchemes: ["http", "https", "mailto"],
+    },
   );
   const wordCount = parsed.content.trim().split(/\s+/).filter(Boolean).length;
 

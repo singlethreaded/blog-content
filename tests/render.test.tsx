@@ -41,6 +41,22 @@ describe("blog content renderer", () => {
     expect(post.metadata.wordCount).toBeGreaterThan(0);
   });
 
+  it("sanitizes raw HTML before writing the artifact", async () => {
+    const post = await renderPostSource({
+      slug: "sanitize-html",
+      assetBaseUrl: "https://cdn.example.com/posts",
+      source: `${validFrontmatter}
+<a href="javascript:alert(1)">bad link</a>
+<script>alert(1)</script>
+<Callout tone="note" title="Still allowed">Safe body.</Callout>
+`,
+    });
+
+    expect(post.contentHtml).not.toContain("javascript:");
+    expect(post.contentHtml).not.toContain("<script");
+    expect(post.contentHtml).toContain('data-component="callout"');
+  });
+
   it("rejects missing hero alt text", async () => {
     await expect(
       renderPostSource({

@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Welcome to the Fatecaster blog",
+    "subtitle": "A dynamic content pipeline backed by GitHub.",
+    "date": "2026-06-08T00:00:00.000Z",
+    "summary": "The first published artifact-driven post for Fatecaster.",
+    "category": "Product",
+    "tags": ["product", "publishing"],
+    "featured": true,
+    "draft": false,
+    "slug": "welcome",
+    "permalink": "/blog/welcome",
+    "contentHtml": "<p>Welcome to the dynamic blog pipeline.</p>\n<aside data-component=\"callout\" data-tone=\"success\"><strong>Publishing flow</strong><div><p>Merge blog content here, run the artifact checks, and Fatecaster will pick it\nup from GitHub without a production application deploy.</p></div></aside>\n<figure data-component=\"metric\"><figcaption>Deploys needed</figcaption><strong>0</strong><p>After the website integration ships once.</p></figure>",
+    "metadata": { "readingTime": 1, "wordCount": 43 }
+  }
+]

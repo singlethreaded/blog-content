@@ -1,0 +1,27 @@
+name: Blog content
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run format:check
+      - name: Verify artifact is committed
+        run: |
+          if ! git diff --exit-code -- dist/posts.json; then
+            echo "::error::dist/posts.json is stale. Run npm run build and commit it."
+            exit 1
+          fi

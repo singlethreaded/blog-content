@@ -41,6 +41,36 @@ describe("blog content renderer", () => {
     expect(post.metadata.wordCount).toBeGreaterThan(0);
   });
 
+  it("sanitizes raw HTML before writing the artifact", async () => {
+    const post = await renderPostSource({
+      slug: "sanitize-html",
+      assetBaseUrl: "https://cdn.example.com/posts",
+      source: `${validFrontmatter}
+<a href="javascript:alert(1)">bad link</a>
+<script>alert(1)</script>
+<Callout tone="note" title="Still allowed">Safe body.</Callout>
+`,
+    });
+
+    expect(post.contentHtml).not.toContain("javascript:");
+    expect(post.contentHtml).not.toContain("<script");
+    expect(post.contentHtml).toContain('data-component="callout"');
+  });
+
+  it("preserves Markdown images with routable asset URLs", async () => {
+    const post = await renderPostSource({
+      slug: "image-post",
+      assetBaseUrl: "https://cdn.example.com/posts",
+      source: `${validFrontmatter}
+![Damage curve](./diagram.png)
+`,
+    });
+
+    expect(post.contentHtml).toContain(
+      '<img src="https://cdn.example.com/posts/image-post/diagram.png" alt="Damage curve" loading="lazy" />',
+    );
+  });
+
   it("rejects missing hero alt text", async () => {
     await expect(
       renderPostSource({

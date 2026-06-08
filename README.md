@@ -39,6 +39,21 @@ Valid categories are `Tactics`, `Product`, `Math`, `Rules`, and `Meta`.
 
 `draft: true` posts are validated but excluded from `dist/posts.json`.
 
+## Hero Images
+
+If a post uses `heroImage`, place the image next to the post and reference it
+with a relative path:
+
+```mdx
+heroImage: ./hero.jpg
+heroAlt: A short description of the image
+```
+
+Use a 1200x630 image when possible. Larger files with the same roughly 1.91:1
+aspect ratio, such as 1600x840 or 2400x1260, are also fine. Prefer compressed
+JPEG for photos or screenshots, and PNG only when transparency or crisp UI text
+matters. Try to keep the file under 500 KB.
+
 ## Rich Components
 
 The MDX renderer supports:

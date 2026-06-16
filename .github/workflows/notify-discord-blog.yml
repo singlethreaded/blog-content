@@ -1,0 +1,121 @@
+name: Notify Discord (new blog post)
+
+# Posts a link to the Discord #Blog channel whenever a NEWLY published post
+# appears in the built artifact (dist/posts.json) on main. Detection is
+# delta-based: it diffs the new artifact against the previous commit's artifact
+# and announces only slugs that were not published before — so editing an
+# already-live post (or adding a draft) never re-announces it. A draft->published
+# flip is detected because the post first enters dist/posts.json at that point.
+#
+# Setup (one-time):
+#   - Secret  DISCORD_BLOG_WEBHOOK_URL  (the channel webhook URL) — required.
+#   - Var     BLOG_SITE_BASE_URL        (optional; defaults to https://fatecaster.io).
+# Fail-soft: if the secret is unset the job logs a warning and exits 0.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dist/posts.json"
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Announce this exact post slug (skips auto-detection)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-discord-blog
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so the previous commit's dist/posts.json is always
+          # resolvable (even on multi-commit pushes) for the delta diff.
+          fetch-depth: 0
+
+      - name: Determine newly published slugs
+        id: detect
+        env:
+          BEFORE: ${{ github.event.before }}
+          DISPATCH_SLUG: ${{ github.event.inputs.slug }}
+        run: |
+          set -euo pipefail
+          NEW=dist/posts.json
+          jq -r '.[].slug' "$NEW" | sort > new_slugs.txt
+
+          if [ -n "${DISPATCH_SLUG:-}" ]; then
+            # Manual override: announce exactly the requested slug.
+            printf '%s\n' "$DISPATCH_SLUG" > added_slugs.txt
+          else
+            ZERO=0000000000000000000000000000000000000000
+            if [ -n "${BEFORE:-}" ] && [ "${BEFORE}" != "$ZERO" ] \
+               && git cat-file -e "${BEFORE}:dist/posts.json" 2>/dev/null; then
+              git show "${BEFORE}:dist/posts.json" | jq -r '.[].slug' | sort > old_slugs.txt
+            else
+              # Previous artifact unavailable (branch create / shallow) — treat the
+              # current set as already-known so we never announce the whole backlog.
+              cp new_slugs.txt old_slugs.txt
+            fi
+            comm -13 old_slugs.txt new_slugs.txt > added_slugs.txt
+          fi
+
+          COUNT=$(grep -c . added_slugs.txt || true)
+          echo "count=${COUNT}" >> "$GITHUB_OUTPUT"
+          echo "Newly published: ${COUNT}"
+          cat added_slugs.txt || true
+
+      - name: Post to Discord
+        if: steps.detect.outputs.count != '0'
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_BLOG_WEBHOOK_URL }}
+          SITE_BASE: ${{ vars.BLOG_SITE_BASE_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEBHOOK:-}" ]; then
+            echo "::warning::DISCORD_BLOG_WEBHOOK_URL is not set — skipping Discord post."
+            exit 0
+          fi
+          BASE="${SITE_BASE:-https://fatecaster.io}"
+          BASE="${BASE%/}"
+
+          while IFS= read -r slug; do
+            [ -n "$slug" ] || continue
+            post=$(jq -c --arg s "$slug" 'map(select(.slug == $s)) | .[0] // empty' dist/posts.json)
+            if [ -z "$post" ]; then
+              echo "::warning::slug '$slug' not found in dist/posts.json — skipping."
+              continue
+            fi
+            title=$(jq -r '.title' <<<"$post")
+            summary=$(jq -r '.summary // ""' <<<"$post")
+            url="${BASE}/blog/${slug}"
+
+            payload=$(jq -n \
+              --arg title "📝 ${title}" \
+              --arg desc "$summary" \
+              --arg url "$url" \
+              '{
+                 username: "Fatecaster Blog",
+                 allowed_mentions: { parse: [] },
+                 embeds: [ { title: $title, description: $desc, url: $url, color: 8136941,
+                             footer: { text: "Fatecaster Blog" } } ]
+               }')
+
+            echo "Announcing: $slug -> $url"
+            code=$(curl -sS -o /tmp/resp.txt -w '%{http_code}' \
+              -H "Content-Type: application/json" -X POST \
+              -d "$payload" "$WEBHOOK")
+            if [ "$code" != "204" ] && [ "$code" != "200" ]; then
+              echo "::error::Discord webhook returned HTTP $code"
+              cat /tmp/resp.txt || true
+              exit 1
+            fi
+            sleep 1
+          done < added_slugs.txt

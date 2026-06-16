@@ -1,0 +1,74 @@
+---
+title: "Toward 11th Edition: Rule Coverage Progress"
+subtitle: Where Fatecaster's damage math stands across stratagems, rules, and abilities.
+date: 2026-06-15
+summary: A 15 June progress report on our modeling coverage of 11th-edition stratagems, rules, and abilities.
+category: Rules
+tags:
+  - 11th-edition
+  - coverage
+  - rules
+  - progress
+featured: false
+draft: false
+---
+
+Unlike many other dice games, Warhammer 40k has a rich complexity to its rules. Complex conditions, stacking
+interactions, branching paths, tracking state through various phases. To my knowledge, nobody has even tried
+to model all the 40k rules in code before, and for good reason: it's painful. As soon as you get it down,
+the rules change on you.
+
+That's one of the challenges that piqued my interest and drove me to make Fatecaster. Model the rules in code,
+map the probability shapes and then keep up with them as they change. I made it a hackathon topic and just kept
+driving it till I had it down.
+
+As Warhammer 40,000 moves into its 11th edition, now with 2 days left till full rule release,
+the question I get most is _how much of the new rules does Fatecaster actually model?_
+To answer it with real numbers rather than a hand-wave, I built an agent that audits the entire
+catalog — every unit ability, army rule, detachment rule, and stratagem — against our live
+damage engine. The latest pass, run on 15 June, looked at more than 6,800 distinct rules and
+abilities across 43 factions and 133 detachments. Of those, about 2,880 actually affect
+damage calculations; the rest govern movement, objectives, command points, and other effects
+that sit outside the attack math we are currently modeling.
+
+Using a tool like this is a major form of trust: the math is expected to be right. As a result,
+I want to be transparent about where Fatecaster stands today.
+
+Of the content that affects damage, 63% is fully modeled and 93% is at least partially modeled
+— meaning the core effect of the rule is already in the math, even where a narrow sub-clause may
+be intentionally ignored, approximated, simplified or just still being refined. That leaves roughly
+200 effects (about 7%) not yet modeled and sitting on our build list. Put plainly: when you analyze
+a list in Fatecaster, the overwhelming majority of the rules that change the result are already being
+accounted for. The remaining 7% are some difficult logic cases that need manual modelling decisions.
+
+<Metric
+  label="Damage-affecting rules audited"
+  value="2,880"
+  caption="Across all 43 factions, 15 June 2026"
+/>
+
+<Metric
+  label="Fully modeled"
+  value="63%"
+  caption="Core effect and every clause in the math"
+/>
+
+<Metric
+  label="At least partially modeled"
+  value="93%"
+  caption="Core damage effect already represented"
+/>
+
+To do this work, I have multiple adversarial audit agents periodically go through the 2,130 unit
+abilities, 596 stratagems, 133 detachment rules, and 19 army rules that carry damage-affecting effects,
+reading the printed rule against exactly what our engine emits. Encouragingly, only a handful held up
+as genuine modeling gaps; most of the items are either intentionally simplified or missing some hard to
+model conditions. As an example, we don't care whether a guard unit "has orders" and we have not
+prioritized modeling effects against units below starting strength.
+
+What's left is tracked and prioritized by how often each effect appears and how
+much it moves the numbers, so the highest-impact fixes ship first. As more
+11e units and rules land, this audit runs again, and we'll keep publishing these
+snapshots so you can watch coverage climb across the transition.
+
+Thank you for building your lists with us along the way.

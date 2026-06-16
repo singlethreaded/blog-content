@@ -5,6 +5,16 @@ on:
   push:
     branches: [main]
 
+# Needed so the push-to-main job can commit the regenerated artifact back.
+permissions:
+  contents: write
+
+# Serialize runs per ref so two quick pushes to main can't race on the
+# auto-commit (one rebuild at a time; never cancel a half-done commit).
+concurrency:
+  group: blog-content-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   content:
     runs-on: ubuntu-latest
@@ -19,9 +29,30 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run format:check
-      - name: Verify artifact is committed
+
+      # On pull requests we can't push to main, so keep the strict gate: a PR
+      # whose dist/posts.json wasn't rebuilt fails, prompting `npm run build`.
+      - name: Verify artifact is committed (pull requests)
+        if: github.event_name == 'pull_request'
         run: |
           if ! git diff --exit-code -- dist/posts.json; then
             echo "::error::dist/posts.json is stale. Run npm run build and commit it."
             exit 1
           fi
+
+      # On push to main the rebuild above is authoritative. If it changed the
+      # artifact (e.g. a post was edited via the GitHub web UI, which can't run
+      # the build), commit it back so the live blog actually updates. The
+      # [skip ci] tag stops this commit from re-triggering the workflow.
+      - name: Commit regenerated artifact (push to main)
+        if: github.event_name == 'push'
+        run: |
+          if git diff --quiet -- dist/posts.json; then
+            echo "dist/posts.json already up to date; nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/posts.json
+          git commit -m "chore(content): rebuild dist/posts.json [skip ci]"
+          git push origin HEAD:main

@@ -95,8 +95,15 @@ Body.
 
   it("builds the committed artifact without drafts", async () => {
     const posts = await buildContent();
-    expect(posts.map((post) => post.slug)).toEqual(["welcome"]);
-    expect(posts[0]?.contentHtml).toContain(
+    const slugs = posts.map((post) => post.slug);
+    // Drafts are excluded from the published artifact...
+    expect(slugs).not.toContain("draft-example");
+    // ...while published posts are included (lookup, not index, so the
+    // assertion is order-independent as more posts are published).
+    expect(slugs).toContain("welcome");
+    expect(slugs).toContain("2026-06-15-rule-coverage-progress");
+    const welcome = posts.find((post) => post.slug === "welcome");
+    expect(welcome?.contentHtml).toContain(
       "Welcome to the dynamic blog pipeline.",
     );
   });

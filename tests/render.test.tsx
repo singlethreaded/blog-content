@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildContent } from "../src/build.js";
+import { buildContent, tryRenderPost } from "../src/build.js";
 import { renderPostSource } from "../src/render.js";
+
+const assetBaseUrl = "https://cdn.example.com/posts";
 
 const validFrontmatter = `---
 title: Rich content test
@@ -84,6 +86,72 @@ category: Product
 tags:
   - product
 heroImage: ./hero.png
+draft: false
+---
+
+Body.
+`,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("skips a draft whose frontmatter fails validation, without throwing", async () => {
+    // category is invalid and heroAlt is missing — but it's a draft, so the
+    // build must not crash; it just drops the post from the artifact.
+    const post = await tryRenderPost({
+      slug: "broken-draft",
+      assetBaseUrl,
+      source: `---
+title: Work in progress
+date: 2026-06-15
+summary: Not ready yet.
+category: rankings
+tags:
+  - wip
+draft: true
+---
+
+Body.
+`,
+    });
+
+    expect(post).toBeNull();
+  });
+
+  it("skips a draft whose frontmatter is unparseable YAML, without throwing", async () => {
+    // The summary line is invalid YAML (unquoted "? ... :"), so gray-matter
+    // can't parse it — yet `draft: true` is still detected from the raw block.
+    const post = await tryRenderPost({
+      slug: "unparseable-draft",
+      assetBaseUrl,
+      source: `---
+title: Work in progress
+summary: Is it better than a grenade? First up: Aeldari.
+category: Tactics
+tags:
+  - wip
+draft: true
+---
+
+Body.
+`,
+    });
+
+    expect(post).toBeNull();
+  });
+
+  it("still fails the build for a published post with broken frontmatter", async () => {
+    await expect(
+      tryRenderPost({
+        slug: "broken-published",
+        assetBaseUrl,
+        source: `---
+title: Should have been caught
+date: 2026-06-15
+summary: Going live but invalid.
+category: rankings
+tags:
+  - oops
 draft: false
 ---
 

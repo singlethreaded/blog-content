@@ -1,0 +1,7 @@
+# Generated artifact — already formatted by the build (src/build.ts).
+dist/
+
+# Post content is authored/edited in the GitHub web UI and can't be run through
+# Prettier before commit. Enforcing format here would fail `format:check` on
+# every content edit and block the auto-rebuild. Code under src/ is still checked.
+content/

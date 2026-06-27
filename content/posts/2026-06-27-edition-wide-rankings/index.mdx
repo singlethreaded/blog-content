@@ -1,0 +1,66 @@
+---
+title: "11th Edition Is Fully Modeled — Come Check My Work"
+subtitle: Every damage-affecting rule in 11th edition is now in the math, and the edition-wide rankings are the proof.
+date: 2026-06-27
+summary: 11th edition's damage-affecting rules are now modeled end to end. The new edition-wide rankings are live as proof — and I'd love faction experts to gut-check their faction.
+category: Product
+tags:
+  - 11th-edition
+  - rankings
+  - rules
+  - community
+featured: true
+draft: false
+---
+
+A couple of weeks ago I [shared a progress report](/blog/2026-06-15-rule-coverage-progress) on how
+much of 11th edition Fatecaster actually modeled: 63% of damage-affecting rules fully modeled, 93% at
+least partially, and a build list of the hard cases that were left.
+
+That build list is now cleared. **Every damage-affecting rule in 11th edition is modeled and ready to
+use.** Unit abilities, army rules, detachment rules, stratagems — if a rule changes the attack math,
+the engine is accounting for it. The edition is in.
+
+<Metric
+  label="Damage-affecting rules modeled"
+  value="100%"
+  caption="Unit abilities, army rules, detachment rules, and stratagems across all 43 factions"
+/>
+
+I want to be straight about what "modeled" means, because trust in the numbers is the whole point.
+A handful of rules are still deliberately *approximated* — narrow sub-clauses I've judged either too
+rare or too situational to move a real result (we still don't care whether a Guard unit "has orders",
+for instance). Where that's true, it's a conscious modeling decision, not a gap. The core effect of
+every rule that bends the dice is in the math.
+
+## The proof: edition-wide rankings
+
+Talk is cheap, so here's the receipt. I've taken the finished engine and run it across the *entire*
+11th edition catalog to produce a single, edition-wide power ranking of every unit.
+
+<Callout tone="success" title="See it live">
+  The rankings are up right now at [fatecaster.io/rankings](https://fatecaster.io/rankings) — no login
+  needed to look.
+</Callout>
+
+This only exists because the modeling is complete. You can't honestly rank a Custodes Caladius against
+a Tyranid Exocrine if half of either faction's rules are missing from the math. Ranking the whole
+edition at once is the thing that only became possible once the coverage hit 100% — which is exactly
+why it's the proof I wanted to ship alongside this milestone.
+
+## Where you come in
+
+I'd genuinely love for the community to kick the tires on this — especially **faction experts**.
+
+You know your faction's quirks better than any audit agent does. So my one ask: **open your faction's
+ranking and give it a once-over.** Does the order feel right? Is a unit ranked way above or below where
+your table experience puts it? That gut-check from someone who actually plays the faction is worth more
+than another pass from me.
+
+And if something looks off, I made it easy to tell me. Open any unit in the rankings and hit the
+**Report issue** button — it flags that exact unit for my review, with the context attached, so I can
+dig into whether it's a modeling bug or just a surprising-but-correct result. Both outcomes are useful;
+sometimes the math is right and the surprise is the insight.
+
+This is open beta, the rankings are free to browse, and the whole thing gets better the more eyes are
+on it. Thanks for building — and now sanity-checking — your lists with me.
